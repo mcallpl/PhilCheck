@@ -25,6 +25,16 @@
 
 <div class="main">
 
+    <!-- INSIGHT BANNER -->
+    <div class="insight-banner" id="insightBanner" style="display:none;">
+        <div class="insight-icon">&#128161;</div>
+        <div class="insight-content">
+            <div class="insight-label">PhilCheck Discovery</div>
+            <div class="insight-text" id="insightText"></div>
+        </div>
+        <button class="insight-close" id="insightClose">&times;</button>
+    </div>
+
     <!-- ADD PANEL -->
     <div id="add" class="panel active">
         <div class="card">

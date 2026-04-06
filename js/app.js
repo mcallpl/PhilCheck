@@ -382,6 +382,30 @@ document.addEventListener('DOMContentLoaded', () => {
         return origFetch(url, opts);
     };
 
+    // --- INSIGHTS ---
+    async function loadInsight() {
+        try {
+            const res = await fetch('api/insights.php');
+            const data = await res.json();
+            if (data.success && data.insight) {
+                const banner = document.getElementById('insightBanner');
+                document.getElementById('insightText').textContent = data.insight;
+                banner.style.display = 'flex';
+            }
+        } catch (err) { /* silent */ }
+    }
+
+    document.getElementById('insightClose').addEventListener('click', () => {
+        document.getElementById('insightBanner').style.display = 'none';
+    });
+
+    // Load insight on page load (only if entries exist)
+    setTimeout(() => {
+        fetch('api/stats.php').then(r => r.json()).then(d => {
+            if (d.total_entries >= 3) loadInsight();
+        }).catch(() => {});
+    }, 1500);
+
     // Init
     loadStats();
 });
