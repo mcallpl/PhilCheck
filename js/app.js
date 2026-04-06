@@ -269,6 +269,119 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
+    // --- SPEECH-TO-TEXT (Microphone) ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    function setupMic(btnId, targetEl, isInput) {
+        const btn = document.getElementById(btnId);
+        if (!SpeechRecognition) {
+            btn.title = 'Speech not supported in this browser';
+            btn.style.opacity = '0.4';
+            return;
+        }
+
+        let recognition = null;
+        let isRecording = false;
+
+        btn.addEventListener('click', () => {
+            if (isRecording) {
+                recognition.stop();
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            let finalTranscript = '';
+            const target = document.getElementById(targetEl);
+            const startValue = isInput ? target.value : target.value;
+
+            recognition.onstart = () => {
+                isRecording = true;
+                btn.classList.add('recording');
+                btn.innerHTML = '&#9899; Stop';
+            };
+
+            recognition.onresult = (event) => {
+                let interim = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interim += event.results[i][0].transcript;
+                    }
+                }
+                if (isInput) {
+                    target.value = startValue + finalTranscript + interim;
+                } else {
+                    target.value = startValue + (startValue ? '\n' : '') + finalTranscript + interim;
+                }
+            };
+
+            recognition.onend = () => {
+                isRecording = false;
+                btn.classList.remove('recording');
+                btn.innerHTML = '&#127908;' + (isInput ? '' : ' Speak');
+                if (isInput) {
+                    target.value = (startValue + finalTranscript).trim();
+                } else {
+                    target.value = (startValue + (startValue ? '\n' : '') + finalTranscript).trim();
+                }
+            };
+
+            recognition.onerror = (e) => {
+                console.error('Speech error:', e.error);
+                isRecording = false;
+                btn.classList.remove('recording');
+                btn.innerHTML = '&#127908;' + (isInput ? '' : ' Speak');
+                if (e.error === 'not-allowed') {
+                    showToast('Please allow microphone access');
+                }
+            };
+
+            recognition.start();
+        });
+    }
+
+    setupMic('micBtn', 'pasteText', false);
+    setupMic('chatMicBtn', 'chatInput', true);
+
+    // --- AUTO-SAVE CHAT TO JOURNAL ---
+    // Chat Q&A is already stored in chat_history table.
+    // Also save each full exchange as a journal entry for AI context.
+    function saveChatToJournal(question, answer) {
+        const text = `Chat Q&A (${new Date().toLocaleString()}):\nQ: ${question}\nA: ${answer}`;
+        const formData = new FormData();
+        formData.append('text_content', text);
+        fetch('api/upload.php', { method: 'POST', body: formData }).catch(() => {});
+    }
+
+    // Patch sendMessage to capture Q&A pairs
+    const origFetch = window.fetch;
+    const pendingQuestions = {};
+    window.fetch = function(url, opts) {
+        if (typeof url === 'string' && url.includes('api/chat.php') && opts && opts.body) {
+            try {
+                const body = JSON.parse(opts.body);
+                if (body.message) {
+                    return origFetch(url, opts).then(response => {
+                        const clone = response.clone();
+                        clone.json().then(data => {
+                            if (data.success && data.reply) {
+                                saveChatToJournal(body.message, data.reply);
+                                loadStats();
+                            }
+                        }).catch(() => {});
+                        return response;
+                    });
+                }
+            } catch(e) {}
+        }
+        return origFetch(url, opts);
+    };
+
     // Init
     loadStats();
 });

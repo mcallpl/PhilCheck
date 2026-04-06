@@ -163,6 +163,18 @@ body {
     padding: 6px 12px;
 }
 .btn-danger:hover { background: #FFEBEE; }
+.btn-mic {
+    background: #F3E5F5;
+    color: #7B1FA2;
+    font-size: 18px;
+}
+.btn-mic:hover { background: #E1BEE7; }
+.btn-mic.recording {
+    background: #D32F2F;
+    color: white;
+    animation: pulse 1s infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 .btn-group { display: flex; gap: 12px; margin-top: 16px; }
 
 /* Chat Interface */

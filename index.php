@@ -44,6 +44,7 @@
                 <textarea id="pasteText" placeholder="Paste or type your health notes here...&#10;&#10;For example:&#10;- What you ate today&#10;- How you're feeling&#10;- Any symptoms or energy levels&#10;- Notes from a doctor visit&#10;- Your conversation with AI about health"></textarea>
                 <div class="btn-group">
                     <button class="btn btn-primary" id="saveTextBtn">Save to Journal</button>
+                    <button class="btn btn-mic" id="micBtn" title="Click to speak your notes">&#127908; Speak</button>
                 </div>
             </div>
         </div>
@@ -72,6 +73,7 @@
             </div>
             <div class="chat-input-area">
                 <input type="text" id="chatInput" placeholder="Ask me about your health..." autocomplete="off">
+                <button class="btn btn-mic" id="chatMicBtn" title="Click to speak your question">&#127908;</button>
                 <button class="btn btn-primary" id="sendBtn">Send</button>
             </div>
         </div>
