@@ -7,20 +7,19 @@ try {
     $db = getDB();
 
     // Only generate insights if we have enough entries
-    $entryCount = $db->querySingle("SELECT COUNT(*) FROM entries");
+    $entryCount = $db->query("SELECT COUNT(*) AS cnt FROM entries")->fetch_assoc()['cnt'];
     if ($entryCount < 3) {
         echo json_encode(['success' => true, 'insight' => null, 'reason' => 'Not enough entries yet']);
         exit;
     }
 
     // Check if we generated an insight recently (no more than once per 6 hours)
-    $lastInsight = $db->querySingle("SELECT created_at FROM chat_history WHERE role='insight' ORDER BY id DESC LIMIT 1");
-    if ($lastInsight) {
-        $lastTime = strtotime($lastInsight);
+    $lastRow = $db->query("SELECT created_at FROM chat_history WHERE role='insight' ORDER BY id DESC LIMIT 1")->fetch_assoc();
+    if ($lastRow) {
+        $lastTime = strtotime($lastRow['created_at']);
         if (time() - $lastTime < 6 * 3600) {
-            // Return the most recent insight instead
-            $recent = $db->querySingle("SELECT message FROM chat_history WHERE role='insight' ORDER BY id DESC LIMIT 1");
-            echo json_encode(['success' => true, 'insight' => $recent, 'cached' => true]);
+            $recentRow = $db->query("SELECT message FROM chat_history WHERE role='insight' ORDER BY id DESC LIMIT 1")->fetch_assoc();
+            echo json_encode(['success' => true, 'insight' => $recentRow['message'], 'cached' => true]);
             exit;
         }
     }
@@ -29,7 +28,7 @@ try {
     $entries = [];
     $totalChars = 0;
     $result = $db->query("SELECT content, source_name, created_at FROM entries ORDER BY created_at ASC");
-    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+    while ($row = $result->fetch_assoc()) {
         $entryText = "--- {$row['created_at']}" .
             ($row['source_name'] ? " ({$row['source_name']})" : "") .
             " ---\n{$row['content']}\n";
@@ -55,7 +54,7 @@ try {
     // Include previous insights to avoid repeats
     $prevInsights = [];
     $insightResult = $db->query("SELECT message FROM chat_history WHERE role='insight' ORDER BY id DESC LIMIT 5");
-    while ($row = $insightResult->fetchArray(SQLITE3_ASSOC)) {
+    while ($row = $insightResult->fetch_assoc()) {
         $prevInsights[] = $row['message'];
     }
     if (!empty($prevInsights)) {
@@ -102,10 +101,10 @@ try {
     $insight = $data['content'][0]['text'] ?? null;
 
     if ($insight) {
-        // Save insight
-        $stmt = $db->prepare("INSERT INTO chat_history (role, message) VALUES ('insight', :msg)");
-        $stmt->bindValue(':msg', $insight, SQLITE3_TEXT);
+        $stmt = $db->prepare("INSERT INTO chat_history (role, message) VALUES ('insight', ?)");
+        $stmt->bind_param('s', $insight);
         $stmt->execute();
+        $stmt->close();
     }
 
     echo json_encode(['success' => true, 'insight' => $insight]);

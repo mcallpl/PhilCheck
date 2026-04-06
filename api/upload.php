@@ -9,10 +9,12 @@ try {
     // Handle pasted text
     if (isset($_POST['text_content']) && trim($_POST['text_content']) !== '') {
         $content = trim($_POST['text_content']);
-        $stmt = $db->prepare("INSERT INTO entries (content, source_type, source_name) VALUES (:content, 'paste', 'Pasted Text')");
-        $stmt->bindValue(':content', $content, SQLITE3_TEXT);
+        $stmt = $db->prepare("INSERT INTO entries (content, source_type, source_name) VALUES (?, 'paste', 'Pasted Text')");
+        $stmt->bind_param('s', $content);
         $stmt->execute();
-        echo json_encode(['success' => true, 'message' => 'Text saved successfully', 'id' => $db->lastInsertRowID()]);
+        $id = $stmt->insert_id;
+        $stmt->close();
+        echo json_encode(['success' => true, 'message' => 'Text saved successfully', 'id' => $id]);
         exit;
     }
 
@@ -55,7 +57,6 @@ try {
             $content = file_get_contents($tmpName);
             $sourceType = 'text_file';
         } else {
-            // Try to read as text anyway
             $content = file_get_contents($tmpName);
             if (mb_check_encoding($content, 'UTF-8') && !preg_match('/[\x00-\x08\x0E-\x1F]/', $content)) {
                 $sourceType = 'text_file';
@@ -71,13 +72,13 @@ try {
             continue;
         }
 
-        $stmt = $db->prepare("INSERT INTO entries (content, source_type, source_name) VALUES (:content, :type, :name)");
-        $stmt->bindValue(':content', $content, SQLITE3_TEXT);
-        $stmt->bindValue(':type', $sourceType, SQLITE3_TEXT);
-        $stmt->bindValue(':name', $name, SQLITE3_TEXT);
+        $stmt = $db->prepare("INSERT INTO entries (content, source_type, source_name) VALUES (?, ?, ?)");
+        $stmt->bind_param('sss', $content, $sourceType, $name);
         $stmt->execute();
+        $id = $stmt->insert_id;
+        $stmt->close();
 
-        $results[] = ['file' => $name, 'success' => true, 'id' => $db->lastInsertRowID(), 'preview' => mb_substr($content, 0, 200)];
+        $results[] = ['file' => $name, 'success' => true, 'id' => $id, 'preview' => mb_substr($content, 0, 200)];
     }
 
     echo json_encode(['success' => true, 'results' => $results]);
@@ -88,7 +89,6 @@ try {
 }
 
 function extractPDFText($filepath) {
-    // Try pdftotext command first (most reliable)
     $output = '';
     $returnCode = -1;
     $escaped = escapeshellarg($filepath);
@@ -97,14 +97,11 @@ function extractPDFText($filepath) {
         return implode("\n", $outputLines);
     }
 
-    // Fallback: basic PHP PDF text extraction
     $content = file_get_contents($filepath);
     $text = '';
 
-    // Extract text between stream/endstream
     if (preg_match_all('/stream\s*\n(.*?)\nendstream/s', $content, $matches)) {
         foreach ($matches[1] as $stream) {
-            // Try to decompress
             $decoded = @gzuncompress($stream);
             if ($decoded === false) {
                 $decoded = @gzinflate($stream);
@@ -112,7 +109,6 @@ function extractPDFText($filepath) {
             if ($decoded === false) {
                 $decoded = $stream;
             }
-            // Extract text operators
             if (preg_match_all('/\[(.*?)\]\s*TJ/s', $decoded, $tjMatches)) {
                 foreach ($tjMatches[1] as $tj) {
                     if (preg_match_all('/\((.*?)\)/s', $tj, $strMatches)) {

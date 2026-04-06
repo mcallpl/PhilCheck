@@ -6,19 +6,23 @@ requireLoginAPI();
 try {
     $db = getDB();
 
-    $totalEntries = $db->querySingle("SELECT COUNT(*) FROM entries");
-    $totalChats = $db->querySingle("SELECT COUNT(*) FROM chat_history WHERE role='user'");
-    $firstEntry = $db->querySingle("SELECT created_at FROM entries ORDER BY created_at ASC LIMIT 1");
-    $latestEntry = $db->querySingle("SELECT created_at FROM entries ORDER BY created_at DESC LIMIT 1");
+    $totalEntries = $db->query("SELECT COUNT(*) AS cnt FROM entries")->fetch_assoc()['cnt'];
+    $totalChats = $db->query("SELECT COUNT(*) AS cnt FROM chat_history WHERE role='user'")->fetch_assoc()['cnt'];
+
+    $firstRow = $db->query("SELECT created_at FROM entries ORDER BY created_at ASC LIMIT 1")->fetch_assoc();
+    $firstEntry = $firstRow ? $firstRow['created_at'] : null;
+
+    $latestRow = $db->query("SELECT created_at FROM entries ORDER BY created_at DESC LIMIT 1")->fetch_assoc();
+    $latestEntry = $latestRow ? $latestRow['created_at'] : null;
 
     // Entries per day for the last 30 days
     $daily = [];
-    $result = $db->query("SELECT date(created_at) as day, COUNT(*) as count
+    $result = $db->query("SELECT DATE(created_at) AS day, COUNT(*) AS count
         FROM entries
-        WHERE created_at >= date('now', '-30 days', 'localtime')
-        GROUP BY date(created_at)
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY DATE(created_at)
         ORDER BY day ASC");
-    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+    while ($row = $result->fetch_assoc()) {
         $daily[] = $row;
     }
 

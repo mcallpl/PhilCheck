@@ -13,17 +13,18 @@ try {
     $db = getDB();
 
     // Save user message to chat history
-    $stmt = $db->prepare("INSERT INTO chat_history (role, message) VALUES ('user', :msg)");
-    $stmt->bindValue(':msg', $userMessage, SQLITE3_TEXT);
+    $stmt = $db->prepare("INSERT INTO chat_history (role, message) VALUES ('user', ?)");
+    $stmt->bind_param('s', $userMessage);
     $stmt->execute();
+    $stmt->close();
 
     // Gather all health entries as context
     $entries = [];
     $totalChars = 0;
-    $maxChars = 80000; // Keep context manageable
+    $maxChars = 80000;
 
     $result = $db->query("SELECT content, source_name, created_at FROM entries ORDER BY created_at ASC");
-    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+    while ($row = $result->fetch_assoc()) {
         $entryText = "--- Entry from {$row['created_at']}" .
             ($row['source_name'] ? " (Source: {$row['source_name']})" : "") .
             " ---\n{$row['content']}\n";
@@ -31,6 +32,7 @@ try {
         $entries[] = $entryText;
         $totalChars += strlen($entryText);
     }
+    $result->free();
 
     $healthContext = implode("\n", $entries);
     $entryCount = count($entries);
@@ -38,9 +40,10 @@ try {
     // Get recent chat history for continuity
     $recentChat = [];
     $chatResult = $db->query("SELECT role, message FROM chat_history ORDER BY id DESC LIMIT 10");
-    while ($row = $chatResult->fetchArray(SQLITE3_ASSOC)) {
+    while ($row = $chatResult->fetch_assoc()) {
         $recentChat[] = $row;
     }
+    $chatResult->free();
     $recentChat = array_reverse($recentChat);
 
     // Build the system prompt
@@ -65,7 +68,6 @@ try {
 
     // Build messages array
     $messages = [];
-    // Include recent chat for continuity (skip the last one which is the current message)
     for ($i = 0; $i < count($recentChat) - 1; $i++) {
         $messages[] = [
             'role' => $recentChat[$i]['role'],
@@ -74,7 +76,6 @@ try {
     }
     $messages[] = ['role' => 'user', 'content' => $userMessage];
 
-    // Call Claude API
     if (empty(CLAUDE_API_KEY)) {
         throw new Exception('Claude API key not configured. Please add it to config.local.php');
     }
@@ -113,9 +114,10 @@ try {
     $reply = $data['content'][0]['text'] ?? 'Sorry, I couldn\'t generate a response.';
 
     // Save assistant reply
-    $stmt = $db->prepare("INSERT INTO chat_history (role, message) VALUES ('assistant', :msg)");
-    $stmt->bindValue(':msg', $reply, SQLITE3_TEXT);
+    $stmt = $db->prepare("INSERT INTO chat_history (role, message) VALUES ('assistant', ?)");
+    $stmt->bind_param('s', $reply);
     $stmt->execute();
+    $stmt->close();
 
     echo json_encode(['success' => true, 'reply' => $reply, 'entries_count' => $entryCount]);
 

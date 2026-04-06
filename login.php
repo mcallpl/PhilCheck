@@ -20,16 +20,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Please enter both username and password.';
     } else {
         $db = getDB();
-        $stmt = $db->prepare("SELECT id, username, password_hash FROM users WHERE username = :u");
-        $stmt->bindValue(':u', $username, SQLITE3_TEXT);
-        $result = $stmt->execute();
-        $user = $result->fetchArray(SQLITE3_ASSOC);
+        $stmt = $db->prepare("SELECT id, username, password_hash FROM users WHERE username = ?");
+        $stmt->bind_param('s', $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        $stmt->close();
 
         if ($user && password_verify($password, $user['password_hash'])) {
             // Update login count and last login
-            $stmt = $db->prepare("UPDATE users SET login_count = login_count + 1, last_login = datetime('now','localtime') WHERE id = :id");
-            $stmt->bindValue(':id', $user['id'], SQLITE3_INTEGER);
+            $stmt = $db->prepare("UPDATE users SET login_count = login_count + 1, last_login = NOW() WHERE id = ?");
+            $stmt->bind_param('i', $user['id']);
             $stmt->execute();
+            $stmt->close();
 
             // Set session
             $_SESSION['user_id'] = $user['id'];

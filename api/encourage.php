@@ -11,18 +11,17 @@ try {
     }
 
     $db = getDB();
-    $entryCount = $db->querySingle("SELECT COUNT(*) FROM entries");
+    $entryCount = $db->query("SELECT COUNT(*) AS cnt FROM entries")->fetch_assoc()['cnt'];
 
     // Gather recent entries for context (last 10)
     $recentEntries = [];
     $result = $db->query("SELECT content, created_at FROM entries ORDER BY created_at DESC LIMIT 10");
-    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+    while ($row = $result->fetch_assoc()) {
         $recentEntries[] = "({$row['created_at']}): {$row['content']}";
     }
     $context = implode("\n---\n", $recentEntries);
 
     if (empty(CLAUDE_API_KEY)) {
-        // Fallback without AI
         echo json_encode(['success' => true, 'message' => "Great job adding that, Phil! You now have {$entryCount} entries. Keep going — every note helps me understand your health better!"]);
         exit;
     }

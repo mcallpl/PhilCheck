@@ -4,66 +4,57 @@ require_once __DIR__ . '/../config.php';
 function getDB() {
     static $db = null;
     if ($db === null) {
-        $dir = dirname(DB_PATH);
-        if (!is_dir($dir)) mkdir($dir, 0755, true);
-        $db = new SQLite3(DB_PATH);
-        $db->exec('PRAGMA journal_mode=WAL');
-        $db->exec('PRAGMA foreign_keys=ON');
+        $db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        if ($db->connect_error) {
+            die('Database connection failed: ' . $db->connect_error);
+        }
+        $db->set_charset('utf8mb4');
         initDB($db);
     }
     return $db;
 }
 
 function initDB($db) {
-    $db->exec("CREATE TABLE IF NOT EXISTS entries (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        content TEXT NOT NULL,
-        source_type TEXT DEFAULT 'text',
-        source_name TEXT,
-        created_at DATETIME DEFAULT (datetime('now','localtime')),
-        tags TEXT DEFAULT ''
-    )");
+    $db->query("CREATE TABLE IF NOT EXISTS entries (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        content LONGTEXT NOT NULL,
+        source_type VARCHAR(50) DEFAULT 'text',
+        source_name VARCHAR(255),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        tags VARCHAR(500) DEFAULT '',
+        FULLTEXT KEY ft_content (content)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-    $db->exec("CREATE TABLE IF NOT EXISTS chat_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        role TEXT NOT NULL,
-        message TEXT NOT NULL,
-        created_at DATETIME DEFAULT (datetime('now','localtime'))
-    )");
+    $db->query("CREATE TABLE IF NOT EXISTS chat_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        role VARCHAR(50) NOT NULL,
+        message LONGTEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-    $db->exec("CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        login_count INTEGER DEFAULT 0,
+    $db->query("CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(100) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        login_count INT DEFAULT 0,
         last_login DATETIME,
-        created_at DATETIME DEFAULT (datetime('now','localtime'))
-    )");
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     // Seed default users if table is empty
-    $userCount = $db->querySingle("SELECT COUNT(*) FROM users");
-    if ($userCount == 0) {
-        $stmt = $db->prepare("INSERT INTO users (username, password_hash) VALUES (:u, :p)");
-        $stmt->bindValue(':u', 'phil', SQLITE3_TEXT);
-        $stmt->bindValue(':p', password_hash('poppers', PASSWORD_DEFAULT), SQLITE3_TEXT);
+    $result = $db->query("SELECT COUNT(*) AS cnt FROM users");
+    $row = $result->fetch_assoc();
+    if ($row['cnt'] == 0) {
+        $stmt = $db->prepare("INSERT INTO users (username, password_hash) VALUES (?, ?)");
+        $hash = password_hash('poppers', PASSWORD_DEFAULT);
+        $user = 'phil';
+        $stmt->bind_param('ss', $user, $hash);
         $stmt->execute();
 
-        $stmt->bindValue(':u', 'mcallpl', SQLITE3_TEXT);
-        $stmt->bindValue(':p', password_hash('amazing', PASSWORD_DEFAULT), SQLITE3_TEXT);
+        $hash = password_hash('amazing', PASSWORD_DEFAULT);
+        $user = 'mcallpl';
+        $stmt->bind_param('ss', $user, $hash);
         $stmt->execute();
+        $stmt->close();
     }
-
-    $db->exec("CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(content, content='entries', content_rowid='id')");
-
-    // Triggers to keep FTS in sync
-    $db->exec("CREATE TRIGGER IF NOT EXISTS entries_ai AFTER INSERT ON entries BEGIN
-        INSERT INTO entries_fts(rowid, content) VALUES (new.id, new.content);
-    END");
-    $db->exec("CREATE TRIGGER IF NOT EXISTS entries_ad AFTER DELETE ON entries BEGIN
-        INSERT INTO entries_fts(entries_fts, rowid, content) VALUES('delete', old.id, old.content);
-    END");
-    $db->exec("CREATE TRIGGER IF NOT EXISTS entries_au AFTER UPDATE ON entries BEGIN
-        INSERT INTO entries_fts(entries_fts, rowid, content) VALUES('delete', old.id, old.content);
-        INSERT INTO entries_fts(rowid, content) VALUES (new.id, new.content);
-    END");
 }
