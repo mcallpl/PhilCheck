@@ -46,16 +46,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!data.success) throw new Error(data.error);
 
             let html = '';
+            let savedContent = '';
             data.results.forEach(r => {
                 if (r.success) {
                     html += `<div class="upload-item success">&#10003; ${r.file} — saved successfully</div>`;
+                    if (r.preview) savedContent += r.preview + ' ';
                 } else {
                     html += `<div class="upload-item error">&#10007; ${r.file} — ${r.error}</div>`;
                 }
             });
             uploadStatus.innerHTML = html;
-            showToast('Files processed!');
             loadStats();
+            if (savedContent) getEncouragement(savedContent);
         } catch (err) {
             uploadStatus.innerHTML = `<div class="upload-item error">&#10007; ${err.message}</div>`;
         }
@@ -78,14 +80,42 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!data.success) throw new Error(data.error);
 
             textArea.value = '';
-            showToast('Text saved to your health journal!');
             loadStats();
+            getEncouragement(text);
         } catch (err) {
             showToast('Error: ' + err.message);
         } finally {
             btn.disabled = false;
             btn.textContent = 'Save to Journal';
         }
+    });
+
+    // --- ENCOURAGEMENT AFTER ENTRY ---
+    async function getEncouragement(content) {
+        const banner = document.getElementById('encourageBanner');
+        const text = document.getElementById('encourageText');
+        banner.style.display = 'flex';
+        text.textContent = 'Analyzing what you just shared...';
+
+        try {
+            const res = await fetch('api/encourage.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: content.substring(0, 2000) })
+            });
+            const data = await res.json();
+            if (data.success && data.message) {
+                text.textContent = data.message;
+            } else {
+                banner.style.display = 'none';
+            }
+        } catch (err) {
+            banner.style.display = 'none';
+        }
+    }
+
+    document.getElementById('encourageClose').addEventListener('click', () => {
+        document.getElementById('encourageBanner').style.display = 'none';
     });
 
     // --- CHAT ---

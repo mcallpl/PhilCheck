@@ -417,6 +417,18 @@ body {
     cursor: pointer;
 }
 .insight-close:hover { color: #555; }
+.encourage-banner {
+    background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+    border: 2px solid var(--primary-light);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    animation: slideDown 0.5s ease;
+    position: relative;
+}
 
 /* Responsive */
 @media (max-width: 768px) {

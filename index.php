@@ -25,6 +25,16 @@
 
 <div class="main">
 
+    <!-- ENCOURAGEMENT BANNER (after adding entries) -->
+    <div class="encourage-banner" id="encourageBanner" style="display:none;">
+        <div class="insight-icon">&#127775;</div>
+        <div class="insight-content">
+            <div class="insight-label" style="color:#2E7D5F;">New Discovery!</div>
+            <div class="insight-text" id="encourageText"></div>
+        </div>
+        <button class="insight-close" id="encourageClose">&times;</button>
+    </div>
+
     <!-- INSIGHT BANNER -->
     <div class="insight-banner" id="insightBanner" style="display:none;">
         <div class="insight-icon">&#128161;</div>
