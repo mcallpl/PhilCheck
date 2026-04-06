@@ -4,6 +4,7 @@ define('APP_NAME', 'PhilCheck');
 define('DB_PATH', __DIR__ . '/data/philcheck.db');
 define('UPLOAD_DIR', __DIR__ . '/uploads/');
 define('MAX_UPLOAD_SIZE', 10 * 1024 * 1024); // 10MB
+define('SESSION_TIMEOUT', 600); // 10 minutes in seconds
 
 // Load local overrides first (API keys, etc.)
 if (file_exists(__DIR__ . '/config.local.php')) {

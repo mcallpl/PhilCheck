@@ -1,5 +1,35 @@
 // PhilCheck — Health Journal App
 document.addEventListener('DOMContentLoaded', () => {
+
+    // --- SESSION TIMEOUT (10 min inactivity) ---
+    const SESSION_TIMEOUT = 600; // seconds
+    let lastActivity = Date.now();
+
+    function resetActivity() { lastActivity = Date.now(); }
+    ['click', 'keydown', 'mousemove', 'touchstart', 'scroll'].forEach(evt =>
+        document.addEventListener(evt, resetActivity, { passive: true })
+    );
+
+    // Check session every 30 seconds
+    setInterval(() => {
+        const idle = Math.floor((Date.now() - lastActivity) / 1000);
+        if (idle >= SESSION_TIMEOUT) {
+            window.location.href = 'login.php';
+        }
+    }, 30000);
+
+    // Intercept all fetch calls — redirect on 401
+    const _origFetch = window.fetch;
+    window.fetch = function(...args) {
+        return _origFetch(...args).then(response => {
+            if (response.status === 401) {
+                window.location.href = 'login.php';
+                return Promise.reject('Session expired');
+            }
+            return response;
+        });
+    };
+
     // Tab navigation
     const tabs = document.querySelectorAll('.nav-tab');
     const panels = document.querySelectorAll('.panel');
@@ -153,11 +183,15 @@ document.addEventListener('DOMContentLoaded', () => {
             sendBtn.disabled = false;
             if (!data.success) throw new Error(data.error);
             appendMessage('assistant', data.reply);
+            saveChatToJournal(msg, data.reply);
+            loadStats();
         })
         .catch(err => {
             typingIndicator.classList.remove('show');
             sendBtn.disabled = false;
-            appendMessage('assistant', 'Sorry, something went wrong: ' + err.message);
+            if (err !== 'Session expired') {
+                appendMessage('assistant', 'Sorry, something went wrong: ' + (err.message || err));
+            }
         });
     }
 
@@ -379,38 +413,12 @@ document.addEventListener('DOMContentLoaded', () => {
     setupMic('chatMicBtn', 'chatInput', true);
 
     // --- AUTO-SAVE CHAT TO JOURNAL ---
-    // Chat Q&A is already stored in chat_history table.
-    // Also save each full exchange as a journal entry for AI context.
     function saveChatToJournal(question, answer) {
         const text = `Chat Q&A (${new Date().toLocaleString()}):\nQ: ${question}\nA: ${answer}`;
         const formData = new FormData();
         formData.append('text_content', text);
         fetch('api/upload.php', { method: 'POST', body: formData }).catch(() => {});
     }
-
-    // Patch sendMessage to capture Q&A pairs
-    const origFetch = window.fetch;
-    const pendingQuestions = {};
-    window.fetch = function(url, opts) {
-        if (typeof url === 'string' && url.includes('api/chat.php') && opts && opts.body) {
-            try {
-                const body = JSON.parse(opts.body);
-                if (body.message) {
-                    return origFetch(url, opts).then(response => {
-                        const clone = response.clone();
-                        clone.json().then(data => {
-                            if (data.success && data.reply) {
-                                saveChatToJournal(body.message, data.reply);
-                                loadStats();
-                            }
-                        }).catch(() => {});
-                        return response;
-                    });
-                }
-            } catch(e) {}
-        }
-        return origFetch(url, opts);
-    };
 
     // --- INSIGHTS ---
     async function loadInsight() {

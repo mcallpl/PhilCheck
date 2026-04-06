@@ -31,6 +31,28 @@ function initDB($db) {
         created_at DATETIME DEFAULT (datetime('now','localtime'))
     )");
 
+    $db->exec("CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        login_count INTEGER DEFAULT 0,
+        last_login DATETIME,
+        created_at DATETIME DEFAULT (datetime('now','localtime'))
+    )");
+
+    // Seed default users if table is empty
+    $userCount = $db->querySingle("SELECT COUNT(*) FROM users");
+    if ($userCount == 0) {
+        $stmt = $db->prepare("INSERT INTO users (username, password_hash) VALUES (:u, :p)");
+        $stmt->bindValue(':u', 'phil', SQLITE3_TEXT);
+        $stmt->bindValue(':p', password_hash('poppers', PASSWORD_DEFAULT), SQLITE3_TEXT);
+        $stmt->execute();
+
+        $stmt->bindValue(':u', 'mcallpl', SQLITE3_TEXT);
+        $stmt->bindValue(':p', password_hash('amazing', PASSWORD_DEFAULT), SQLITE3_TEXT);
+        $stmt->execute();
+    }
+
     $db->exec("CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(content, content='entries', content_rowid='id')");
 
     // Triggers to keep FTS in sync
