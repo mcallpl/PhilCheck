@@ -70,6 +70,17 @@ body {
     transition: background 0.2s;
 }
 .btn-logout:hover { background: rgba(255,255,255,0.35); }
+.btn-dashboard {
+    padding: 6px 16px;
+    background: rgba(255,255,255,0.9);
+    color: var(--primary-dark);
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background 0.2s;
+}
+.btn-dashboard:hover { background: white; }
 
 /* Navigation */
 .nav-tabs {

@@ -49,10 +49,31 @@ function redirectToLogin() {
     exit;
 }
 
+function isAdmin() {
+    return ($_SESSION['role'] ?? '') === 'admin';
+}
+
+function requireAdmin() {
+    requireLogin();
+    if (!isAdmin()) {
+        header('Location: index.php');
+        exit;
+    }
+}
+
+function requireAdminAPI() {
+    requireLoginAPI();
+    if (!isAdmin()) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Admin access required']);
+        exit;
+    }
+}
+
 function getCurrentUser() {
     if (empty($_SESSION['user_id'])) return null;
     $db = getDB();
-    $stmt = $db->prepare("SELECT id, username, login_count, last_login FROM users WHERE id = ?");
+    $stmt = $db->prepare("SELECT id, username, role, login_count, last_login FROM users WHERE id = ?");
     $stmt->bind_param('i', $_SESSION['user_id']);
     $stmt->execute();
     $result = $stmt->get_result();

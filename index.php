@@ -15,14 +15,11 @@ $currentUser = getCurrentUser();
 
 <div class="header">
     <h1><span class="heart">&#9829;</span> PhilCheck</h1>
-    <div class="header-stats">
-        <span>&#128221; <span id="statEntries">0</span> entries</span>
-        <span>&#128172; <span id="statChats">0</span> chats</span>
-        <span>&#128197; <span id="statDays">0</span> days tracking</span>
-    </div>
     <div class="header-user">
         <span class="user-greeting">Hi, <?= htmlspecialchars($currentUser['username'] ?? 'User') ?></span>
-        <span class="user-logins"><?= intval($currentUser['login_count'] ?? 0) ?> logins</span>
+        <?php if (isAdmin()): ?>
+            <a href="dashboard.php" class="btn-dashboard">Dashboard</a>
+        <?php endif; ?>
         <a href="logout.php" class="btn-logout">Sign Out</a>
     </div>
 </div>

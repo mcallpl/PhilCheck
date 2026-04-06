@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Please enter both username and password.';
     } else {
         $db = getDB();
-        $stmt = $db->prepare("SELECT id, username, password_hash FROM users WHERE username = ?");
+        $stmt = $db->prepare("SELECT id, username, password_hash, role FROM users WHERE username = ?");
         $stmt->bind_param('s', $username);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Set session
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
+            $_SESSION['role'] = $user['role'] ?? 'user';
             $_SESSION['last_activity'] = time();
 
             header('Location: index.php');
