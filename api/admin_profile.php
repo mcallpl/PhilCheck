@@ -88,7 +88,8 @@ PROMPT;
     curl_close($ch);
 
     if ($httpCode !== 200) {
-        throw new Exception("API error (HTTP {$httpCode})");
+        error_log("PhilCheck admin_profile API error (HTTP {$httpCode}): " . $response);
+        throw new Exception("I'm having trouble connecting right now. Please try again in a moment.");
     }
 
     $data = json_decode($response, true);

@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             uploadStatus.innerHTML = html;
             loadStats();
-            if (savedContent) getEncouragement(savedContent);
+            if (savedContent) { getEncouragement(savedContent); showAskPhilNudge(); }
         } catch (err) {
             uploadStatus.innerHTML = `<div class="upload-item error">&#10007; ${err.message}</div>`;
         }
@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
             textArea.value = '';
             loadStats();
             getEncouragement(text);
+            showAskPhilNudge();
         } catch (err) {
             showToast('Error: ' + err.message);
         } finally {
@@ -119,6 +120,24 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.textContent = 'Save to Journal';
         }
     });
+
+    // --- ASK PHIL NUDGE ---
+    function showAskPhilNudge() {
+        const nudge = document.getElementById('goAskPhil');
+        if (nudge) nudge.style.display = 'block';
+    }
+    const goAskPhilBtn = document.getElementById('goAskPhilBtn');
+    if (goAskPhilBtn) {
+        goAskPhilBtn.addEventListener('click', () => {
+            // Switch to chat tab
+            tabs.forEach(t => t.classList.remove('active'));
+            panels.forEach(p => p.classList.remove('active'));
+            const chatTab = document.querySelector('[data-panel="chat"]');
+            chatTab.classList.add('active');
+            document.getElementById('chat').classList.add('active');
+            chatInput.focus();
+        });
+    }
 
     // --- ENCOURAGEMENT AFTER ENTRY ---
     async function getEncouragement(content) {
@@ -190,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
             typingIndicator.classList.remove('show');
             sendBtn.disabled = false;
             if (err !== 'Session expired') {
-                appendMessage('assistant', 'Sorry, something went wrong: ' + (err.message || err));
+                appendMessage('assistant', 'Sorry, something went wrong. Please try again in a moment.');
             }
         });
     }

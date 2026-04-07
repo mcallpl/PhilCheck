@@ -18,5 +18,5 @@ if (file_exists(__DIR__ . '/config.local.php')) {
 
 // Claude API defaults (only if not set in config.local.php)
 if (!defined('CLAUDE_API_KEY')) define('CLAUDE_API_KEY', '');
-if (!defined('CLAUDE_MODEL')) define('CLAUDE_MODEL', 'claude-sonnet-4-6-20250514');
+if (!defined('CLAUDE_MODEL')) define('CLAUDE_MODEL', 'claude-sonnet-4-6');
 if (!defined('CLAUDE_MAX_TOKENS')) define('CLAUDE_MAX_TOKENS', 4096);

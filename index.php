@@ -25,8 +25,8 @@ $currentUser = getCurrentUser();
 </div>
 
 <div class="nav-tabs">
-    <button class="nav-tab active" data-panel="add">Add Health Notes</button>
-    <button class="nav-tab" data-panel="chat">Ask PhilCheck</button>
+    <button class="nav-tab active" data-panel="add"><span class="tab-step">1</span> Add Notes</button>
+    <button class="nav-tab" data-panel="chat"><span class="tab-step">2</span> Ask Phil</button>
     <button class="nav-tab" data-panel="journal">My Journal</button>
 </div>
 
@@ -54,6 +54,13 @@ $currentUser = getCurrentUser();
 
     <!-- ADD PANEL -->
     <div id="add" class="panel active">
+        <div class="how-it-works">
+            <div class="how-it-works-title">How PhilCheck Works</div>
+            <div class="how-it-works-steps">
+                <div class="how-step"><span class="how-num">1</span> Add your health notes below — what you ate, how you feel, doctor notes, anything!</div>
+                <div class="how-step"><span class="how-num">2</span> Tap <strong>"Ask Phil"</strong> above to ask questions about your health.</div>
+            </div>
+        </div>
         <div class="card">
             <h2>Drop Files Here</h2>
             <div class="drop-zone" id="dropZone">
@@ -75,6 +82,11 @@ $currentUser = getCurrentUser();
                 </div>
             </div>
         </div>
+
+        <div class="go-ask-phil" id="goAskPhil" style="display:none;">
+            <div class="go-ask-phil-text">Notes saved! Ready to ask Phil a question?</div>
+            <button class="btn btn-primary btn-lg" id="goAskPhilBtn">Ask Phil Now &rarr;</button>
+        </div>
     </div>
 
     <!-- CHAT PANEL -->
@@ -83,9 +95,8 @@ $currentUser = getCurrentUser();
             <div class="chat-messages" id="chatMessages">
                 <div id="chatWelcome" class="chat-welcome">
                     <div class="icon">&#129657;</div>
-                    <h3>Hi Phil! Ask me anything about your health.</h3>
-                    <p>I'll look through all your journal entries to give you personalized answers.</p>
-                    <p style="font-size:15px;color:#999;">The more notes you add, the smarter I get!</p>
+                    <h3>This is where you ask questions, Phil!</h3>
+                    <p>Type a question below, or tap one of these to get started:</p>
                     <div class="suggestions">
                         <div class="suggestion">How am I feeling lately?</div>
                         <div class="suggestion">What foods seem to bother me?</div>

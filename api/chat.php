@@ -105,9 +105,8 @@ try {
     curl_close($ch);
 
     if ($httpCode !== 200) {
-        $errBody = json_decode($response, true);
-        $errMsg = $errBody['error']['message'] ?? "API error (HTTP {$httpCode})";
-        throw new Exception($errMsg);
+        error_log("PhilCheck API error (HTTP {$httpCode}): " . $response);
+        throw new Exception("I'm having trouble connecting right now. Please try again in a moment.");
     }
 
     $data = json_decode($response, true);
