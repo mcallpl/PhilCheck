@@ -16,7 +16,7 @@ if (file_exists(__DIR__ . '/config.local.php')) {
     require __DIR__ . '/config.local.php';
 }
 
-// Claude API defaults (only if not set in config.local.php)
-if (!defined('CLAUDE_API_KEY')) define('CLAUDE_API_KEY', '');
-if (!defined('CLAUDE_MODEL')) define('CLAUDE_MODEL', 'claude-haiku-4-5-20251001');
-if (!defined('CLAUDE_MAX_TOKENS')) define('CLAUDE_MAX_TOKENS', 4096);
+// Gemini API defaults (only if not set in config.local.php)
+if (!defined('GEMINI_API_KEY')) define('GEMINI_API_KEY', '');
+if (!defined('GEMINI_MODEL')) define('GEMINI_MODEL', 'gemini-2.0-flash');
+if (!defined('GEMINI_MAX_TOKENS')) define('GEMINI_MAX_TOKENS', 4096);
